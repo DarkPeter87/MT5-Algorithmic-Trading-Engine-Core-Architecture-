@@ -35,13 +35,13 @@ def test_signal_generator_short_dataframe():
 def test_mean_reversion_crossover_properties():
     # Test the crossed properties explicitly
     snap_buy = IndicatorSnapshot(
-        close_prev=99.0, bb_lower=100.0, close=101.0
+        close_prev=101.0, bb_lower=100.0, close=99.0
     )
-    assert snap_buy.crossed_above_bb_lower is True
-    assert snap_buy.crossed_below_bb_upper is False
+    assert snap_buy.crossed_below_bb_lower is True
+    assert snap_buy.crossed_above_bb_upper is False
 
     snap_sell = IndicatorSnapshot(
-        close_prev=101.0, bb_upper=100.0, close=99.0
+        close_prev=99.0, bb_upper=100.0, close=101.0
     )
-    assert snap_sell.crossed_below_bb_upper is True
-    assert snap_sell.crossed_above_bb_lower is False
+    assert snap_sell.crossed_above_bb_upper is True
+    assert snap_sell.crossed_below_bb_lower is False

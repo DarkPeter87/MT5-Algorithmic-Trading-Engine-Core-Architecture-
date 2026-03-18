@@ -40,7 +40,7 @@ logger = logging.getLogger("RegimeBot")
 @dataclass
 class BotConfig:
     # MT5 kapcsolat
-    symbol:             str   = "XAUUSD"
+    symbol:             str   = "XAUEUR"
     timeframe_minutes:  int   = 15       # M15 alapértelmezett
     bars:               int   = 500      # Letöltött gyertyák száma
 
@@ -67,7 +67,7 @@ class BotConfig:
     # Kockázatkezelés
     risk_pct:           float = 0.01    # Számlaegyenleg 1%-a / trade
     atr_sl_multi:       float = 1.5     # SL = ATR × 1.5
-    atr_tp_multi:       float = 2.5     # TP = ATR × 2.5
+    atr_tp_multi:       float = 3.0     # TP = ATR × 3.0
     min_lot:            float = 0.01
     max_lot:            float = 1.0
     lot_step:           float = 0.01
@@ -281,7 +281,7 @@ class RegimeBot:
 if __name__ == "__main__":
     # ── Konfiguráció ─────────────────────────────────────────────────────
     CONFIG = BotConfig(
-        symbol="XAUUSD",
+        symbol="XAUEUR",
         timeframe_minutes=15,
         bars=500,
 
@@ -295,6 +295,7 @@ if __name__ == "__main__":
 
         # Kockázat: 1% per trade, ATR-alapú SL/TP
         risk_pct=0.01,
+        atr_tp_multi=3.0,
 
         # ⚠️ DRY_RUN = True → nem küld valódi ordereket!
         # Állítsd False-ra, ha élesen akarsz kereskedni.

@@ -146,11 +146,11 @@ class RegimeStrategy:
 
     def _ranging_signal(self, snap: IndicatorSnapshot) -> StrategyResult:
         """
-        BUY:  Close keresztezi fel az alsó BB-t ALULRÓL ÉS RSI <= 30 (túleladott)
-        SELL: Close keresztezi le a felső BB-t FELÜLRŐL ÉS RSI >= 70 (túlvásárolt)
+        BUY:  Close keresztezi le az alsó BB-t ALULRÓL ÉS RSI <= 30 (túleladott)
+        SELL: Close keresztezi fel a felső BB-t FELÜLRŐL ÉS RSI >= 70 (túlvásárolt)
         """
-        # BUY: BB alsó sáv crossover felfelé + RSI túleladott
-        if snap.crossed_above_bb_lower and snap.rsi <= self.rsi_oversold:
+        # BUY: BB alsó sáv crossover lefelé + RSI túleladott
+        if snap.crossed_below_bb_lower and snap.rsi <= self.rsi_oversold:
             return StrategyResult(
                 signal=Signal.BUY,
                 regime=Regime.RANGING,
@@ -160,8 +160,8 @@ class RegimeStrategy:
                 ),
             )
 
-        # SELL: BB felső sáv crossover lefelé + RSI túlvásárolt
-        if snap.crossed_below_bb_upper and snap.rsi >= self.rsi_overbought:
+        # SELL: BB felső sáv crossover felfelé + RSI túlvásárolt
+        if snap.crossed_above_bb_upper and snap.rsi >= self.rsi_overbought:
             return StrategyResult(
                 signal=Signal.SELL,
                 regime=Regime.RANGING,

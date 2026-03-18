@@ -51,14 +51,14 @@ class IndicatorSnapshot:
         return self.rsi < self.rsi_prev
 
     @property
-    def crossed_above_bb_lower(self) -> bool:
-        """Close was below the lower BB, now crossed back above it."""
-        return self.close_prev <= self.bb_lower and self.close > self.bb_lower
+    def crossed_below_bb_lower(self) -> bool:
+        """Close crosses below the lower BB."""
+        return self.close_prev >= self.bb_lower and self.close < self.bb_lower
 
     @property
-    def crossed_below_bb_upper(self) -> bool:
-        """Close was above the upper BB, now crossed back below it."""
-        return self.close_prev >= self.bb_upper and self.close < self.bb_upper
+    def crossed_above_bb_upper(self) -> bool:
+        """Close crosses above the upper BB."""
+        return self.close_prev <= self.bb_upper and self.close > self.bb_upper
 
 
 class SignalGenerator:

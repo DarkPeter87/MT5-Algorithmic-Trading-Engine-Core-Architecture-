@@ -32,7 +32,7 @@ def test_ranging_signals():
     
     snap_buy = IndicatorSnapshot(
         adx=20.0, 
-        close_prev=99.0, bb_lower=100.0, close=101.0, # crossed_above_bb_lower
+        close_prev=101.0, bb_lower=100.0, close=99.0, # crossed_below_bb_lower
         rsi=30.0 # exactly 30.0 is allowed now <= 30
     )
     result = strategy.evaluate(snap_buy)
@@ -40,7 +40,7 @@ def test_ranging_signals():
     
     snap_sell = IndicatorSnapshot(
         adx=20.0,
-        close_prev=101.0, bb_upper=100.0, close=99.0, # crossed_below_bb_upper
+        close_prev=99.0, bb_upper=100.0, close=101.0, # crossed_above_bb_upper
         rsi=70.0 # exactly 70 is allowed now >= 70
     )
     result = strategy.evaluate(snap_sell)
