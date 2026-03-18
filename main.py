@@ -83,7 +83,7 @@ class BotConfig:
     max_open_positions: int   = 1       # Egyszerre max 1 nyitott pozíció
 
     # Biztonság – DRY_RUN = True → nem küld valódi ordert, csak naplóz
-    dry_run:            bool  = True
+    dry_run:            bool  = False
 
 
 # ============================================================================
