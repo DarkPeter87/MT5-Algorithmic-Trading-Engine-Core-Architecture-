@@ -24,6 +24,7 @@ from src.signal_generator import SignalGenerator
 from src.regime_strategy import RegimeStrategy, Signal
 from src.risk_manager import RiskManager, XAUUSD_PIP
 from src.execution_engine import ExecutionEngine
+from src.telegram_notifier import TelegramNotifier
 
 # ─── Naplózás ────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -85,6 +86,11 @@ class BotConfig:
     # Biztonság – DRY_RUN = True → nem küld valódi ordert, csak naplóz
     dry_run:            bool  = False
 
+    # Telegram
+    telegram_bot_token: str   = "8563527742:AAFZP6VQrDnhYn6Fhcyicjcyc0IH2vt3gCo"
+    telegram_chat_id:   str   = "6491534361"
+    telegram_enabled:   bool  = True
+
 
 # ============================================================================
 # Fő Bot osztály
@@ -131,6 +137,12 @@ class RegimeBot:
             deviation=config.deviation,
             filling=config.filling,
             comment=config.comment,
+        )
+
+        self.notifier = TelegramNotifier(
+            token=config.telegram_bot_token,
+            chat_id=config.telegram_chat_id,
+            enabled=config.telegram_enabled
         )
 
     # ------------------------------------------------------------------
@@ -252,15 +264,25 @@ class RegimeBot:
             )
 
             # ── Order küldés (vagy DRY_RUN log) ─────────────────────────
-            self._execute(decision.signal, trade_params)
+            self._execute(decision.signal, trade_params, current_price)
 
-    def _execute(self, signal: Signal, params) -> None:
+    def _execute(self, signal: Signal, params, entry_price: float) -> None:
         """Order küldés vagy DRY_RUN naplózás."""
         direction = signal.value
+        is_buy = (signal == Signal.BUY)
+
         if self.cfg.dry_run:
             logger.info(
                 "🚧 DRY_RUN | %s | Lot=%.2f | SL=%.2f | TP=%.2f",
                 direction, params.lot_size, params.sl_price, params.tp_price,
+            )
+            self.notifier.send_trade_alert(
+                is_buy=is_buy,
+                symbol=self.cfg.symbol,
+                lot_size=params.lot_size,
+                entry_price=entry_price,
+                sl=params.sl_price,
+                tp=params.tp_price
             )
             return
 
@@ -271,6 +293,14 @@ class RegimeBot:
 
         if result.success:
             logger.info("✅ %s order leadva | Ticket: %s", direction, result.order_ticket)
+            self.notifier.send_trade_alert(
+                is_buy=is_buy,
+                symbol=self.cfg.symbol,
+                lot_size=params.lot_size,
+                entry_price=entry_price,
+                sl=params.sl_price,
+                tp=params.tp_price
+            )
         else:
             logger.error("❌ %s order sikertelen: %s", direction, result.message)
 
