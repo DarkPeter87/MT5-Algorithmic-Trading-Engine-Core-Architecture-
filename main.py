@@ -272,6 +272,9 @@ class RegimeBot:
                 
             tick_value = s_info.trade_tick_value
             tick_size = s_info.trade_tick_size
+            vol_min = s_info.volume_min
+            vol_max = s_info.volume_max
+            vol_step = s_info.volume_step
 
             trade_params = self.risk.calculate(
                 balance=balance,
@@ -280,6 +283,9 @@ class RegimeBot:
                 is_buy=is_buy,
                 tick_value=tick_value,
                 tick_size=tick_size,
+                volume_min=vol_min,
+                volume_max=vol_max,
+                volume_step=vol_step,
             )
 
             # ── Order küldés (vagy DRY_RUN log) ─────────────────────────
