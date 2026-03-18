@@ -10,5 +10,6 @@ customtkinter>=5.2.0
 # Opcionális: böngészős felület (streamlit run app.py)
 streamlit>=1.28.0
 python-dotenv>=1.0.0
+
 # Platform-helyes fájlútvonal kezelés (SEC-5)
 platformdirs>=4.0.0
