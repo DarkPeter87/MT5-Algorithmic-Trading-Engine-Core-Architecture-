@@ -9,9 +9,9 @@ def test_risk_manager_fallback():
     
     # Given: fallback atr = 2000.0 * 0.005 = 10.0
     # SL distance = 10.0 * 1.5 = 15.0
-    # TP distance = 10.0 * 2.5 = 25.0
+    # TP is now completely handled by trailing stops
     assert params.sl_price == pytest.approx(1985.0)
-    assert params.tp_price == pytest.approx(2025.0)
+    assert params.tp_price == 0.0
 
 def test_risk_manager_lot_calculation():
     # 1000 balance, risk 1% = $10 risk amount

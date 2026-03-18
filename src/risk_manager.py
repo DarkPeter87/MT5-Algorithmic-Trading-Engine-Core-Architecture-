@@ -37,9 +37,9 @@ class RiskManager:
 
     def __init__(
         self,
-        risk_pct: float = 0.01,        # Számlaegyenleg %-a, amit kockáztatunk (1%)
+        risk_pct: float = 0.015,        # Számlaegyenleg %-a, amit kockáztatunk (1.5%)
         atr_sl_multiplier: float = 1.5, # SL = ATR × szorzó
-        atr_tp_multiplier: float = 2.5, # TP = ATR × szorzó
+        atr_tp_multiplier: float = 3.0, # (NEM HASZNÁLJUK = TRAILING STOP TÖRLÉS)
         pip_value: float = 10.0,        # USD értéke 1 pipnak, 1 standard lot esetén (XAUUSD = $10)
         fallback_atr_variance: float = 0.002,
         min_lot: float = 0.01,
@@ -82,18 +82,18 @@ class RiskManager:
 
         # --- SL és TP távolság árban ---
         sl_distance = atr * self.atr_sl_multiplier
-        tp_distance = atr * self.atr_tp_multiplier
+        # TP távolság nem használt, mivel dinamikus Trailing Stop él.
+        # TP eltávolítva: Trailing Stop logika veszi át az uralmat.
+        tp_price = 0.0
 
         if is_buy:
             sl_price = current_price - sl_distance
-            tp_price = current_price + tp_distance
         else:
             sl_price = current_price + sl_distance
-            tp_price = current_price - tp_distance
 
         # SL távolság pipban (lot méret számításhoz)
         sl_pips = sl_distance / pip_size if pip_size > 0 else sl_distance
-        tp_pips = tp_distance / pip_size if pip_size > 0 else tp_distance
+        tp_pips = 0.0 # TP eltávolítva: Trailing Stop logika veszi át az uralmat.
 
         # --- Lot méret számítás ---
         # Kockáztatott összeg = balance × risk_pct

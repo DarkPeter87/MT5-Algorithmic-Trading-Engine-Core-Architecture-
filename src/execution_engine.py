@@ -217,6 +217,23 @@ class ExecutionEngine:
         logger.info("✅ Pozíció zárva | Ticket=%d | Ár=%.2f", ticket, price)
         return ExecutionResult(True, order_ticket=ticket, message="OK")
 
+    def update_sl_tp(self, ticket: int, symbol: str, sl: float, tp: float = 0.0) -> bool:
+        """Meglévő pozíció SL és TP árainak frissítése."""
+        request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "position": ticket,
+            "symbol": symbol,
+            "sl": float(sl),
+            "tp": float(tp),
+            "magic": self.magic,
+        }
+        res = mt5.order_send(request)
+        if res is not None and res.retcode == mt5.TRADE_RETCODE_DONE:
+            return True
+        logger.error("❌ SL frissítése sikertelen a(z) %s tickethez! Retcode: %s, Üzenet: %s", 
+                     ticket, getattr(res, "retcode", "N/A"), getattr(res, "comment", "N/A"))
+        return False
+
     # ------------------------------------------------------------------
     # Segédek
     # ------------------------------------------------------------------
@@ -227,3 +244,55 @@ class ExecutionEngine:
             return []
         positions = mt5.positions_get(symbol=symbol) or []
         return [p for p in positions if p.magic == self.magic]
+
+    def manage_trailing_stops(self, symbol: str, atr: float) -> None:
+        """Nyitott pozíciók felügyelete: Break-Even és Trailing Stop 1.5 * ATR szerint."""
+        if atr <= 0:
+            return
+
+        positions = self.get_open_positions(symbol=symbol)
+        if not positions:
+            return
+
+        tick = mt5.symbol_info_tick(symbol)
+        if not tick:
+            return
+            
+        current_bid = tick.bid
+        current_ask = tick.ask
+
+        for pos in positions:
+            sl_updated = False
+            new_sl = pos.sl
+
+            if pos.type == mt5.ORDER_TYPE_BUY:
+                # 1. Break-Even (ha az ár > belépő + 1*ATR)
+                if current_bid >= pos.price_open + (1.0 * atr):
+                    if new_sl < pos.price_open:
+                        new_sl = pos.price_open
+                        sl_updated = True
+
+                # 2. Trailing Stop (1.5 * ATR követés)
+                trail_sl = current_bid - (1.5 * atr)
+                if trail_sl > pos.price_open and trail_sl > new_sl:
+                    new_sl = trail_sl
+                    sl_updated = True
+
+            elif pos.type == mt5.ORDER_TYPE_SELL:
+                # 1. Break-Even (ha az ár < belépő - 1*ATR)
+                if current_ask <= pos.price_open - (1.0 * atr):
+                    if new_sl > pos.price_open or new_sl == 0.0:
+                        new_sl = pos.price_open
+                        sl_updated = True
+
+                # 2. Trailing Stop (1.5 * ATR követés)
+                trail_sl = current_ask + (1.5 * atr)
+                if trail_sl < pos.price_open and (trail_sl < new_sl or new_sl == 0.0):
+                    new_sl = trail_sl
+                    sl_updated = True
+
+            if sl_updated and new_sl != pos.sl:
+                new_sl = round(new_sl, 5) # kerekítés az MT5 elfogadásához
+                success = self.update_sl_tp(pos.ticket, symbol, new_sl, pos.tp)
+                if success:
+                    logger.info("🔧 Trailing SL frissítve | Ticket: %s | Új SL: %.2f", pos.ticket, new_sl)

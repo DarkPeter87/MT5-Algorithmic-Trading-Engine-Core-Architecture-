@@ -144,6 +144,8 @@ class RegimeBot:
             chat_id=config.telegram_chat_id,
             enabled=config.telegram_enabled
         )
+        
+        self.last_snapshot = None
 
     # ------------------------------------------------------------------
     # Bot életciklus
@@ -199,6 +201,10 @@ class RegimeBot:
                     time.sleep(self.cfg.poll_interval_sec)
                 continue
 
+            # ── Trailing Stop Menedzsment ────────────────────────────────
+            if self.last_snapshot is not None and self.last_snapshot.atr > 0:
+                self.executor.manage_trailing_stops(self.cfg.symbol, self.last_snapshot.atr)
+
             # ── Új gyertya detektálás (PERF-1: Csak 1 gyertya lekérése) ──
             current_bar_time = self.feed.fetch_last_closed_bar_time()
             if current_bar_time is None:
@@ -222,14 +228,15 @@ class RegimeBot:
             logger.info("── Új gyertya: %s ──────────────────────────────────",
                         current_bar_time)
 
-            # ── Indikátor számítás ───────────────────────────────────────
-            snapshot = self.signals.calculate(df)
-            if snapshot is None:
-                logger.warning("Indikátor számítás sikertelen (nincs elegendő adat).")
+            # ── Szignál generálás ────────────────────────────────────────
+            snap = self.signals.calculate(df)
+            if snap is None:
                 continue
+                
+            self.last_snapshot = snap
 
             # ── Stratégia értékelés ──────────────────────────────────────
-            decision = self.strategy.evaluate(snapshot)
+            decision = self.strategy.evaluate(snap)
 
             if not decision.is_actionable():
                 logger.info("Nincs szignál – várakozás a következő gyertyára.")
@@ -258,7 +265,7 @@ class RegimeBot:
             trade_params = self.risk.calculate(
                 balance=balance,
                 current_price=current_price,
-                atr=snapshot.atr,
+                atr=snap.atr,
                 is_buy=is_buy,
                 pip_size=XAUUSD_PIP,
             )
