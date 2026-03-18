@@ -299,7 +299,7 @@ if __name__ == "__main__":
 
         # ⚠️ DRY_RUN = True → nem küld valódi ordereket!
         # Állítsd False-ra, ha élesen akarsz kereskedni.
-        dry_run=True,
+        dry_run=False,
     )
 
     bot = RegimeBot(CONFIG)
