@@ -17,6 +17,8 @@ Konfiguráció:
 import logging
 import time
 from dataclasses import dataclass, field
+from typing import Optional
+import MetaTrader5 as mt5
 
 # ─── Projekt modulok ────────────────────────────────────────────────────────
 from src.data_feed import DataFeed
