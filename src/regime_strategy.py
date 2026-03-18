@@ -86,7 +86,7 @@ class RegimeStrategy:
     # ------------------------------------------------------------------
 
     def _detect_regime(self, adx: float) -> Regime:
-        regime = Regime.TRENDING if adx > self.adx_threshold else Regime.RANGING
+        regime = Regime.TRENDING if adx >= self.adx_threshold else Regime.RANGING
         logger.debug("ADX=%.2f → Rezsim: %s", adx, regime.value)
         return regime
 
@@ -106,7 +106,7 @@ class RegimeStrategy:
         if (
             ema_bull
             and snap.rsi_rising
-            and snap.rsi < self.rsi_overbought
+            and snap.rsi <= self.rsi_overbought
         ):
             return StrategyResult(
                 signal=Signal.BUY,
@@ -122,7 +122,7 @@ class RegimeStrategy:
         if (
             ema_bear
             and snap.rsi_falling
-            and snap.rsi > self.rsi_oversold
+            and snap.rsi >= self.rsi_oversold
         ):
             return StrategyResult(
                 signal=Signal.SELL,
@@ -146,11 +146,11 @@ class RegimeStrategy:
 
     def _ranging_signal(self, snap: IndicatorSnapshot) -> StrategyResult:
         """
-        BUY:  Close keresztezi le az alsó BB-t ALULRÓL ÉS RSI < 30 (túleladott)
-        SELL: Close keresztezi fel a felső BB-t FELÜLRŐL ÉS RSI > 70 (túlvásárolt)
+        BUY:  Close keresztezi fel az alsó BB-t ALULRÓL ÉS RSI <= 30 (túleladott)
+        SELL: Close keresztezi le a felső BB-t FELÜLRŐL ÉS RSI >= 70 (túlvásárolt)
         """
-        # BUY: BB alsó sáv crossover + RSI túleladott
-        if snap.crossed_below_bb_lower and snap.rsi < self.rsi_oversold:
+        # BUY: BB alsó sáv crossover felfelé + RSI túleladott
+        if snap.crossed_above_bb_lower and snap.rsi <= self.rsi_oversold:
             return StrategyResult(
                 signal=Signal.BUY,
                 regime=Regime.RANGING,
@@ -160,8 +160,8 @@ class RegimeStrategy:
                 ),
             )
 
-        # SELL: BB felső sáv crossover + RSI túlvásárolt
-        if snap.crossed_above_bb_upper and snap.rsi > self.rsi_overbought:
+        # SELL: BB felső sáv crossover lefelé + RSI túlvásárolt
+        if snap.crossed_below_bb_upper and snap.rsi >= self.rsi_overbought:
             return StrategyResult(
                 signal=Signal.SELL,
                 regime=Regime.RANGING,

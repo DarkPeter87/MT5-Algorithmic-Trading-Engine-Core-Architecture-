@@ -174,22 +174,35 @@ class RegimeBot:
         while True:
             # ── Kapcsolat ellenőrzés ──────────────────────────────────────
             if not self.feed.is_connected:
-                logger.error("MT5 kapcsolat megszakadt. Várunk %ds-t...",
-                             self.cfg.poll_interval_sec)
+                logger.error("MT5 kapcsolat megszakadt. Újracsatlakozás megkísérlése...")
+                if self.feed.connect(
+                    path=self.cfg.mt5_path,
+                    login=self.cfg.mt5_login,
+                    password=self.cfg.mt5_password,
+                    server=self.cfg.mt5_server,
+                ):
+                    logger.info("Sikeres újracsatlakozás!")
+                else:
+                    logger.error("Újracsatlakozás sikertelen. Várunk %ds-t...", self.cfg.poll_interval_sec)
+                    time.sleep(self.cfg.poll_interval_sec)
+                continue
+
+            # ── Új gyertya detektálás (PERF-1: Csak 1 gyertya lekérése) ──
+            current_bar_time = self.feed.fetch_last_closed_bar_time()
+            if current_bar_time is None:
+                logger.warning("Nem sikerült az utolsó gyertyát lekérni. Újrapróbálás...")
                 time.sleep(self.cfg.poll_interval_sec)
                 continue
 
-            # ── OHLCV lekérés ────────────────────────────────────────────
+            if current_bar_time == last_bar_time:
+                # Nem zárult még új gyertya → várakozás
+                time.sleep(self.cfg.poll_interval_sec)
+                continue
+
+            # ── OHLCV lekérés (Csak ha új gyertya van) ───────────────────
             df = self.feed.fetch_ohlcv()
             if df is None:
                 logger.warning("Nem sikerült OHLCV adatot lekérni. Újrapróbálás...")
-                time.sleep(self.cfg.poll_interval_sec)
-                continue
-
-            # ── Új gyertya detektálás ────────────────────────────────────
-            current_bar_time = df["time"].iloc[-1]
-            if current_bar_time == last_bar_time:
-                # Nem zárult még új gyertya → várakozás
                 time.sleep(self.cfg.poll_interval_sec)
                 continue
 

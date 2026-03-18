@@ -117,7 +117,7 @@ class ExecutionEngine:
             "tp":           params.tp_price,
             "deviation":    self.deviation,
             "magic":        self.magic,
-            "comment":      self.comment,
+            "comment":      self.comment[:31] if self.comment else "",
             "type_filling": filling_mode,
         }
 
@@ -210,6 +210,9 @@ class ExecutionEngine:
             msg = f"Zárás sikertelen | ticket={ticket} | retcode={retcode} | {comment}"
             logger.error(msg)
             return ExecutionResult(False, retcode=retcode, message=msg)
+
+        if hasattr(result, "volume") and result.volume < pos.volume:
+            logger.warning("Partial fill zárás! Kért: %.2f, Teljesült: %.2f", pos.volume, result.volume)
 
         logger.info("✅ Pozíció zárva | Ticket=%d | Ár=%.2f", ticket, price)
         return ExecutionResult(True, order_ticket=ticket, message="OK")

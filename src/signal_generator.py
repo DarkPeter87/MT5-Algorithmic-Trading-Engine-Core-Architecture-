@@ -51,14 +51,14 @@ class IndicatorSnapshot:
         return self.rsi < self.rsi_prev
 
     @property
-    def crossed_below_bb_lower(self) -> bool:
-        """Close most az alsó BB alá esett (crossover)."""
-        return self.close_prev >= self.bb_lower and self.close < self.bb_lower
+    def crossed_above_bb_lower(self) -> bool:
+        """Close was below the lower BB, now crossed back above it."""
+        return self.close_prev <= self.bb_lower and self.close > self.bb_lower
 
     @property
-    def crossed_above_bb_upper(self) -> bool:
-        """Close most a felső BB fölé emelkedett (crossover)."""
-        return self.close_prev <= self.bb_upper and self.close > self.bb_upper
+    def crossed_below_bb_upper(self) -> bool:
+        """Close was above the upper BB, now crossed back below it."""
+        return self.close_prev >= self.bb_upper and self.close < self.bb_upper
 
 
 class SignalGenerator:
@@ -114,7 +114,8 @@ class SignalGenerator:
             )
             return None
 
-        df = df.copy()
+        # Drop the last (incomplete) candle to avoid repainting
+        df = df.iloc[:-1].copy()
 
         # --- ADX ---
         adx_df = ta.adx(df["high"], df["low"], df["close"], length=self.adx_period)
@@ -146,8 +147,12 @@ class SignalGenerator:
         atr_val = self._last_series(atr_s)
 
         # --- Close ---
-        close_val = float(df["close"].iloc[-1])
-        close_prev_val = float(df["close"].iloc[-2])
+        try:
+            close_val = float(df["close"].iloc[-1])
+            close_prev_val = float(df["close"].iloc[-2])
+        except IndexError:
+            logger.warning("DataFrame too short to extract recent closes.")
+            return None
 
         snapshot = IndicatorSnapshot(
             adx=adx_val,

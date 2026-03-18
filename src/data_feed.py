@@ -144,6 +144,24 @@ class DataFeed:
             return None
         return (tick.bid, tick.ask)
 
+    def fetch_last_closed_bar_time(self) -> Optional[pd.Timestamp]:
+        """
+        Legfrissebb lezárt gyertya idejének lekérése.
+        Csak 1 darab adatot tölt le (index 1 = utolsó zárt).
+        """
+        if not self.is_connected:
+            return None
+
+        tf = self._get_mt5_timeframe()
+        if tf is None:
+            return None
+
+        rates = mt5.copy_rates_from_pos(self.symbol, tf, 1, 1)
+        if rates is None or len(rates) == 0:
+            return None
+
+        return pd.to_datetime(rates[0]["time"], unit="s")
+
     def get_account_balance(self) -> float:
         """A kereskedési számla egyenlege vagy 0.0."""
         if not self.is_connected or mt5 is None:

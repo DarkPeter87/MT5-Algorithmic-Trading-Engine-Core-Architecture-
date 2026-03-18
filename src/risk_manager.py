@@ -40,7 +40,8 @@ class RiskManager:
         risk_pct: float = 0.01,        # Számlaegyenleg %-a, amit kockáztatunk (1%)
         atr_sl_multiplier: float = 1.5, # SL = ATR × szorzó
         atr_tp_multiplier: float = 2.5, # TP = ATR × szorzó
-        pip_value: float = 1.0,         # USD értéke 1 pipnak, 1 lot esetén (XAUUSD ≈ $1)
+        pip_value: float = 10.0,        # USD értéke 1 pipnak, 1 standard lot esetén (XAUUSD = $10)
+        fallback_atr_variance: float = 0.002,
         min_lot: float = 0.01,
         max_lot: float = 10.0,
         lot_step: float = 0.01,
@@ -52,6 +53,7 @@ class RiskManager:
         self.atr_sl_multiplier = atr_sl_multiplier
         self.atr_tp_multiplier = atr_tp_multiplier
         self.pip_value = pip_value
+        self.fallback_atr_variance = fallback_atr_variance
         self.min_lot = min_lot
         self.max_lot = max_lot
         self.lot_step = lot_step
@@ -76,7 +78,7 @@ class RiskManager:
         """
         if atr <= 0:
             logger.warning("ATR értéke 0 vagy negatív, fallback SL/TP-t alkalmazunk.")
-            atr = current_price * 0.002  # 0.2% fallback
+            atr = current_price * self.fallback_atr_variance
 
         # --- SL és TP távolság árban ---
         sl_distance = atr * self.atr_sl_multiplier
