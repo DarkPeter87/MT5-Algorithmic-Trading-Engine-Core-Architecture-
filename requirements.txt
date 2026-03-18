@@ -4,6 +4,10 @@ pandas>=2.0.0
 numpy>=1.24.0
 pydantic>=2.0.0
 
+# Indikátor számítás – Regime-Switching stratégiához
+pandas-ta>=0.3.14b
+
+
 # Asztali alkalmazás (desktop_app.py)
 customtkinter>=5.2.0
 
