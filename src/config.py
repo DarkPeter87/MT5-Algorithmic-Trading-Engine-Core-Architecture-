@@ -16,7 +16,7 @@ class MT5Config(BaseModel):
 
 class SymbolConfig(BaseModel):
     """Szimbólum (arany) beállítások."""
-    symbol: str = Field("XAUUSD", description="Kereskedett szimbólum (pl. XAUUSD, GOLD)")
+    symbol: str = Field(default="XAUUSD", description="A kereskedni kívánt szimbólum (pl. XAUUSD)")
     digits: int = Field(2, description="Tizedesjegyek (2 tipikus aranynál)")
 
 

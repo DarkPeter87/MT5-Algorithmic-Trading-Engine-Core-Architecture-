@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
-# Arany (XAUUSD) pip mérete
+# XAUUSD minimális tick (point) mérete (naplózáshoz megtartható referenciaként)
 XAUUSD_PIP = 0.1
 
 
@@ -17,8 +17,8 @@ class TradeParams:
     lot_size: float       # Lot méret
     sl_price: float       # Stop Loss ár
     tp_price: float       # Take Profit ár
-    sl_pips: float        # SL távolság pipban (naplózáshoz)
-    tp_pips: float        # TP távolság pipban (naplózáshoz)
+    sl_ticks: float       # SL távolság tickben/pontban (naplózáshoz)
+    tp_ticks: float       # TP távolság tickben/pontban (naplózáshoz)
 
 
 class RiskManager:
@@ -40,7 +40,6 @@ class RiskManager:
         risk_pct: float = 0.015,        # Számlaegyenleg %-a, amit kockáztatunk (1.5%)
         atr_sl_multiplier: float = 1.5, # SL = ATR × szorzó
         atr_tp_multiplier: float = 3.0, # (NEM HASZNÁLJUK = TRAILING STOP TÖRLÉS)
-        pip_value: float = 10.0,        # USD értéke 1 pipnak, 1 standard lot esetén (XAUUSD = $10)
         fallback_atr_variance: float = 0.002,
         min_lot: float = 0.01,
         max_lot: float = 10.0,
@@ -52,7 +51,6 @@ class RiskManager:
         self.risk_pct = risk_pct
         self.atr_sl_multiplier = atr_sl_multiplier
         self.atr_tp_multiplier = atr_tp_multiplier
-        self.pip_value = pip_value
         self.fallback_atr_variance = fallback_atr_variance
         self.min_lot = min_lot
         self.max_lot = max_lot
@@ -64,16 +62,18 @@ class RiskManager:
         current_price: float,
         atr: float,
         is_buy: bool,
-        pip_size: float = XAUUSD_PIP,
+        tick_value: float,
+        tick_size: float,
     ) -> TradeParams:
         """
-        ATR alapú kockázatszámítás.
+        ATR alapú kockázatszámítás keresztárfolyamokhoz is.
 
-        :param balance:       Számla egyenlege (USD)
+        :param balance:       Számla egyenlege (Pl. EUR)
         :param current_price: Aktuális ask (BUY) vagy bid (SELL) ár
         :param atr:           ATR értéke (ugyanabban az egységben, mint az ár)
         :param is_buy:        True = BUY, False = SELL
-        :param pip_size:      1 pip értéke az adott szimbólumon (XAUUSD = 0.1)
+        :param tick_value:    1 tick (point) elmozdulás értéke 1 Lot-ra vetítve a számla devizájában
+        :param tick_size:     A szimbólum tick mérete (point)
         :return:              TradeParams
         """
         if atr <= 0:
@@ -91,15 +91,16 @@ class RiskManager:
         else:
             sl_price = current_price + sl_distance
 
-        # SL távolság pipban (lot méret számításhoz)
-        sl_pips = sl_distance / pip_size if pip_size > 0 else sl_distance
-        tp_pips = 0.0 # TP eltávolítva: Trailing Stop logika veszi át az uralmat.
+        # SL távolság pipban (tick-ben) a lot méret számításhoz
+        sl_ticks = sl_distance / tick_size if tick_size > 0 else sl_distance
+        tp_ticks = 0.0 # TP eltávolítva: Trailing Stop logika veszi át az uralmat.
 
         # --- Lot méret számítás ---
-        # Kockáztatott összeg = balance × risk_pct
-        # Veszteség 1 loton = sl_pips × pip_value
+        # Kockáztatott összeg
         risk_amount = balance * self.risk_pct
-        loss_per_lot = sl_pips * self.pip_value
+        
+        # Veszteség 1 loton a számla devizájában = (sl_távolság_tickben) * (1_tick_értéke_1_lotra)
+        loss_per_lot = sl_ticks * tick_value
 
         if loss_per_lot <= 0:
             logger.error("loss_per_lot = 0, minimum lot-ot alkalmazunk.")
@@ -111,17 +112,17 @@ class RiskManager:
         lot = self._round_lot(raw_lot)
 
         logger.info(
-            "RiskManager | Balance=%.2f | ATR=%.4f | SL=%.2f pip | TP=%.2f pip | "
-            "Kockázat=%.2f USD | Lot=%.2f",
-            balance, atr, sl_pips, tp_pips, risk_amount, lot,
+            "RiskManager | Balance=%.2f | ATR=%.4f | SL=%.2f pont | TP=%.2f pont | "
+            "Kockázat=%.2f Számladevizában | Lot=%.2f",
+            balance, atr, sl_ticks, tp_ticks, risk_amount, lot,
         )
 
         return TradeParams(
             lot_size=lot,
-            sl_price=round(sl_price, 2),
-            tp_price=round(tp_price, 2),
-            sl_pips=round(sl_pips, 1),
-            tp_pips=round(tp_pips, 1),
+            sl_price=round(sl_price, 5),
+            tp_price=round(tp_price, 5),
+            sl_ticks=round(sl_ticks, 2),
+            tp_ticks=round(tp_ticks, 2),
         )
 
     def _round_lot(self, raw_lot: float) -> float:

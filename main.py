@@ -41,7 +41,7 @@ logger = logging.getLogger("RegimeBot")
 @dataclass
 class BotConfig:
     # MT5 kapcsolat
-    symbol:             str   = "XAUEUR"
+    symbol:             str   = "XAUUSD"
     timeframe_minutes:  int   = 15       # M15 alapértelmezett
     bars:               int   = 500      # Letöltött gyertyák száma
 
@@ -262,12 +262,22 @@ class RegimeBot:
             is_buy = decision.signal == Signal.BUY
             current_price = ask if is_buy else bid
 
+            # Szimbólum infó lekérése a dinamikus kockázatszámítás miatt
+            s_info = mt5.symbol_info(self.cfg.symbol)
+            if s_info is None:
+                logger.error("Symbol info nem elérhető – order kihagyva a %s szimbólumhoz.", self.cfg.symbol)
+                continue
+                
+            tick_value = s_info.trade_tick_value
+            tick_size = s_info.trade_tick_size
+
             trade_params = self.risk.calculate(
                 balance=balance,
                 current_price=current_price,
                 atr=snap.atr,
                 is_buy=is_buy,
-                pip_size=XAUUSD_PIP,
+                tick_value=tick_value,
+                tick_size=tick_size,
             )
 
             # ── Order küldés (vagy DRY_RUN log) ─────────────────────────
@@ -318,7 +328,7 @@ class RegimeBot:
 if __name__ == "__main__":
     # ── Konfiguráció ─────────────────────────────────────────────────────
     CONFIG = BotConfig(
-        symbol="XAUEUR",
+        symbol="XAUUSD",
         timeframe_minutes=15,
         bars=500,
 
