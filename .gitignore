@@ -1,0 +1,26 @@
+# Version control / IDE
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Érzékeny adatok – SOHA ne kerüljön gitbe!
+config_saved.json
+
+# Build / dist
+build/
+dist/
+*.spec
+*.egg-info/
+
+# Teszt / lefedettség
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtuális környezet
+venv/
+.venv/
+env/
