@@ -129,10 +129,6 @@ class RegimeBot:
         self.risk = RiskManager(
             risk_pct=config.risk_pct,
             atr_sl_multiplier=config.atr_sl_multi,
-            atr_tp_multiplier=config.atr_tp_multi,
-            min_lot=config.min_lot,
-            max_lot=config.max_lot,
-            lot_step=config.lot_step,
         )
         self.executor = ExecutionEngine(
             magic=config.magic,
